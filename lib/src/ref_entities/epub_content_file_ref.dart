@@ -36,24 +36,25 @@ abstract class EpubContentFileRef {
         other.ContentType == ContentType);
   }
 
-  ArchiveFile getContentFileEntry() {
+  ArchiveFile? getContentFileEntry() {
     var contentFilePath = ZipPathUtils.combine(
         epubBookRef.Schema!.ContentDirectoryPath, FileName);
     var contentFileEntry = epubBookRef.EpubArchive()!
         .files
         .firstWhereOrNull((ArchiveFile x) => x.name == contentFilePath);
-    if (contentFileEntry == null) {
-      throw Exception(
-          'EPUB parsing error: file $contentFilePath not found in archive.');
-    }
+
     return contentFileEntry;
   }
 
-  List<int> getContentStream() {
-    return openContentStream(getContentFileEntry());
+  List<int>? getContentStream() {
+    return openContentStream(getContentFileEntry()!);
   }
 
-  List<int> openContentStream(ArchiveFile contentFileEntry) {
+  List<int>? openContentStream(ArchiveFile? contentFileEntry) {
+    if (contentFileEntry == null) {
+      return null;
+    }
+
     var contentStream = <int>[];
     if (contentFileEntry.content == null) {
       throw Exception(
@@ -63,15 +64,24 @@ abstract class EpubContentFileRef {
     return contentStream;
   }
 
-  Future<Uint8List> readContentAsBytes() async {
+  Future<Uint8List?> readContentAsBytes() async {
     var contentFileEntry = getContentFileEntry();
     var content = openContentStream(contentFileEntry);
+
+    if (content == null) {
+      return null;
+    }
     return Uint8List.fromList(content);
   }
 
-  Future<String> readContentAsText() async {
+  Future<String?> readContentAsText() async {
     var contentStream = getContentStream();
+    if (contentStream == null) {
+      return null;
+    }
+
     var result = convert.utf8.decode(contentStream);
+
     return result;
   }
 }
